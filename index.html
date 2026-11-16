@@ -293,8 +293,7 @@
   .video-badge{position:absolute;bottom:12px;right:12px;background:rgba(8,19,34,.85);color:var(--gold-300);font-size:.78rem;font-weight:600;padding:.45rem .95rem;border-radius:999px;border:1px solid rgba(201,162,39,.4);z-index:2}
   .video-badge:hover{background:var(--gold-500);color:var(--navy-900)}
   .prop-desc{font-size:.85rem;color:var(--text-soft)}
-  .prop-del{margin-top:.7rem;background:none;border:1px solid #e5dccb;color:var(--text-soft);border-radius:999px;padding:.35rem .85rem;font-size:.74rem;cursor:pointer;font-family:inherit;transition:.2s;align-self:flex-start}
-  .prop-del:hover{border-color:#c0392b;color:#c0392b}
+
   .field-row.three{grid-template-columns:repeat(3,1fr)}
   .insta-card{display:block;position:relative;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);max-width:400px;margin:0 auto;border:1px solid #eee4d3;transition:.3s}
   .insta-card:hover{transform:translateY(-5px)}
@@ -549,9 +548,9 @@
     </div>
 
 <!-- Painel de gestão — uso do corretor -->
-    <div class="manage-bar">
+    <div class="manage-bar" id="manageBar" hidden>
       <button class="btn btn-gold" id="toggleManage" type="button">＋ Adicionar imóvel</button>
-      <span class="manage-hint">Painel de uso do corretor — publique imóveis com foto, vídeo, detalhes e a aba correspondente.</span>
+      <span class="manage-hint">Painel de uso do corretor — gere o imóvel aqui e cole o código no index.html para publicar para todos.</span>
     </div>
     <div class="form-card manage-card" id="manageCard" hidden>
       <h3>Adicionar novo imóvel</h3>
@@ -596,12 +595,18 @@
           <textarea id="pDesc" rows="2" placeholder="Ex.: Varanda gourmet, condomínio com segurança 24h, próximo a escolas..."></textarea>
         </div>
         <div class="field">
-          <label for="pPhoto">Foto do imóvel *</label>
-          <input type="file" id="pPhoto" accept="image/*" required>
-          <small id="photoName" style="color:#2e7d32;font-size:.78rem"></small>
+          <label for="pPhotoUrl">URL da foto do imóvel *</label>
+          <input type="url" id="pPhotoUrl" placeholder="https://... (Instagram, imgur, Drive — copie o link direto da imagem)" required>
         </div>
-        <button type="submit" class="btn btn-navy">🏠 Publicar imóvel</button>
-        <p class="form-note">Os imóveis ficam salvos neste navegador. Para publicar no site oficial, envie os dados para o seu webmaster.</p>
+        <button type="submit" class="btn btn-navy">🏠 Gerar publicação do imóvel</button>
+        <div class="field" id="publishOut" hidden style="margin-top:1.2rem">
+          <label for="publishCode">Código do imóvel — copie e cole no index.html</label>
+          <textarea id="publishCode" rows="4" readonly style="font-family:monospace;font-size:.75rem;white-space:nowrap"></textarea>
+          <button type="button" class="btn btn-gold" id="copyCode" style="width:100%;justify-content:center;margin-top:.6rem">📋 Copiar código</button>
+          <p class="form-note" style="text-align:left;margin-top:.8rem"><b>Como publicar para todos:</b> no GitHub, abra o <b>index.html</b> → ícone de lápis ✏️ → procure (Ctrl+F) por <b>COLE AQUI AS LINHAS</b> → cole a linha copiada na linha abaixo daquela marcação → <b>Commit changes</b>. Em 1 minuto o imóvel aparece no site para todo mundo!</p>
+          <p class="form-note" style="text-align:left">🗑 <b>Para remover um imóvel publicado:</b> apague a linha correspondente dele no index.html e faça o commit.</p>
+        </div>
+        <p class="form-note">💡 Dica: o painel mostra uma pré-visualização aqui na página — mas o imóvel só vai ao ar de verdade depois de colar o código no index.html.</p>
       </form>
     </div>
 
@@ -1054,17 +1059,14 @@
   burger.addEventListener("click", () => mobileMenu.classList.toggle("open"));
   mobileMenu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => mobileMenu.classList.remove("open")));
 
-  // ===== Gestão de imóveis (salvos neste navegador) =====
-  const PROP_KEY = "rafael_imoveis_v1";
+  // ===== Gestão de imóveis =====
+  // Imóveis publicados (visíveis para TODOS) ficam nas linhas PROPS_CMS.push(...) abaixo.
+  const PROPS_CMS = [];
+  // >>> COLE AQUI AS LINHAS GERADAS PELO PAINEL — ex.: PROPS_CMS.push({"title":"..."}); <<<
   const CAT_LABEL = {economia:"Economia", medio:"Médio Padrão", alto:"Alto Padrão", investimento:"Investimento"};
   const CAT_STYLE = {economia:"ph-eco", medio:"ph-med", alto:"ph-alto", investimento:"ph-inv"};
-  function loadProps(){ try{ return JSON.parse(localStorage.getItem(PROP_KEY)) || []; }catch(e){ return []; } }
-  function saveProps(list){ try{ localStorage.setItem(PROP_KEY, JSON.stringify(list)); }catch(e){ alert("Espaço de armazenamento cheio. Remova um imóvel ou use uma foto menor."); } }
 
-  function renderProps(){
-    document.querySelectorAll("[data-grid]").forEach(g => g.innerHTML = "");
-    const list = loadProps();
-    list.forEach((p, idx) => {
+  function addPropCard(p){
       const grid = document.querySelector('[data-grid="' + p.cat + '"]');
       if(!grid) return;
       const specs = [];
@@ -1089,73 +1091,73 @@
             '<div class="prop-price">' + (p.price || "Consulte") + '</div>' +
             '<a href="' + waLink("Olá, Rafael! Tenho interesse no imóvel: " + (p.title||"")) + '" class="link-arrow">Tenho interesse →</a>' +
           '</div>' +
-          '<button class="prop-del" title="Remover imóvel" data-idx="' + idx + '">🗑 Remover</button>' +
         '</div>';
       grid.appendChild(card);
-    });
+  }
+
+  function renderProps(){
+    document.querySelectorAll("[data-grid]").forEach(g => g.innerHTML = "");
+    PROPS_CMS.forEach(addPropCard);
     document.querySelectorAll(".tab-panel").forEach(panel => {
       const grid = panel.querySelector("[data-grid]");
       const empty = panel.querySelector(".empty-state");
       if(grid && empty) empty.style.display = grid.children.length ? "none" : "flex";
     });
-    document.querySelectorAll(".prop-del").forEach(b => b.addEventListener("click", () => {
-      if(confirm("Remover este imóvel do site?")){
-        const list = loadProps();
-        list.splice(parseInt(b.dataset.idx,10), 1);
-        saveProps(list);
-        renderProps();
-      }
-    }));
   }
-
-  // foto: carrega e redimensiona para caber no armazenamento
-  document.getElementById("pPhoto").addEventListener("change", function(){
-    const file = this.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const img = new Image();
-      img.onload = () => {
-        const maxW = 900;
-        const scale = Math.min(1, maxW / img.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        window._propPhoto = canvas.toDataURL("image/jpeg", .82);
-        document.getElementById("photoName").textContent = "✅ Foto carregada";
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
 
   document.getElementById("propForm").addEventListener("submit", function(e){
     e.preventDefault();
     const val = id => document.getElementById(id).value.trim();
     const item = {
       title: val("pTitle"), cat: val("pCat"), loc: val("pLoc"), price: val("pPrice"),
-      video: val("pVideo"), bed: val("pBed"), bath: val("pBath"), area: val("pArea"),
-      desc: val("pDesc"), photo: window._propPhoto || null
+      video: val("pVideo"), bed: val("pBed") || null, bath: val("pBath") || null, area: val("pArea") || null,
+      desc: val("pDesc"), photo: val("pPhotoUrl") || null
     };
-    const list = loadProps();
-    list.push(item);
-    saveProps(list);
+    PROPS_CMS.push(item);            // pré-visualização imediata nesta página
     renderProps();
+    const code = "PROPS_CMS.push(" + JSON.stringify(item) + ");";
+    document.getElementById("publishCode").value = code;
+    document.getElementById("publishOut").hidden = false;
+    document.getElementById("publishOut").scrollIntoView({behavior:"smooth", block:"center"});
     this.reset();
-    window._propPhoto = null;
-    document.getElementById("photoName").textContent = "";
-    document.getElementById("manageCard").hidden = true;
-    const tabBtn = document.querySelector('.tab[data-tab="' + item.cat + '"]');
-    if(tabBtn) tabBtn.click();
-    document.getElementById("imoveis").scrollIntoView({behavior:"smooth"});
+  });
+
+  document.getElementById("copyCode").addEventListener("click", function(){
+    const t = document.getElementById("publishCode");
+    t.select();
+    const done = () => { this.textContent = "✅ Copiado!"; setTimeout(() => this.textContent = "📋 Copiar código", 2500); };
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t.value).then(done); } else { document.execCommand("copy"); done(); }
   });
 
   document.getElementById("toggleManage").addEventListener("click", () => {
     const c = document.getElementById("manageCard");
     c.hidden = !c.hidden;
   });
-  renderProps();
+
+  // ===== Área restrita do proprietário (visitantes não veem nem alteram) =====
+  const ADMIN_CODE = String.fromCharCode(114,97,102,97,101,108,50,55,48,48,51); // troque aqui a sua senha
+  let isAdmin = sessionStorage.getItem("rafael_admin") === "1";
+  function applyAdmin(){
+    document.getElementById("manageBar").hidden = !isAdmin;
+    renderProps();
+  }
+  function tryUnlock(){
+    const pw = prompt("Área restrita do proprietário 🔒\nDigite a senha de acesso:");
+    if(pw === null) return;
+    if(pw === ADMIN_CODE){
+      isAdmin = true;
+      try{ sessionStorage.setItem("rafael_admin","1"); }catch(e){}
+      applyAdmin();
+      document.getElementById("imoveis").scrollIntoView({behavior:"smooth"});
+      alert("Painel liberado! Gere o imóvel, copie o código e cole no index.html para publicar. 🏡");
+    } else {
+      alert("Senha incorreta.");
+    }
+  }
+  function checkAdminHash(){ if(location.hash === "#admin") tryUnlock(); }
+  window.addEventListener("hashchange", checkAdminHash);
+  checkAdminHash();
+  applyAdmin();
 
   // ===== Reveal on scroll =====
   const io = new IntersectionObserver(entries => {
