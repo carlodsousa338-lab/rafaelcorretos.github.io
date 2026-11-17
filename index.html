@@ -587,11 +587,11 @@
 <!-- Painel de gestão — uso do corretor -->
     <div class="manage-bar" id="manageBar" hidden>
       <button class="btn btn-gold" id="toggleManage" type="button">＋ Adicionar imóvel</button>
-      <span class="manage-hint">Painel de uso do corretor — gere o imóvel aqui e cole o código no index.html para publicar para todos.</span>
+      <span class="manage-hint">Painel do corretor — salve o imóvel e publique para todo mundo com 1 clique no GitHub. Grátis, sem token, sem copiar código.</span>
     </div>
     <div class="form-card manage-card" id="manageCard" hidden>
       <h3>Adicionar novo imóvel</h3>
-      <p>Preencha os dados abaixo. O imóvel aparece automaticamente na aba escolhida e fica salvo neste navegador.</p>
+      <p>Preencha os dados, marque a capa com a ⭐ e clique em <b>Publicar</b>. Depois é só clicar em <b>Abrir GitHub</b> e confirmar o <b>Commit changes</b> — em ~1 minuto aparece para todo mundo.</p>
       <form id="propForm">
         <div class="field-row">
           <div class="field">
@@ -643,22 +643,20 @@
         <div class="field">
           <label for="pMedia">Fotos e vídeos (sem limite) 📷🎬</label>
           <input type="file" id="pMedia" multiple accept="image/*,video/*">
-          <small style="color:var(--text-soft);font-size:.74rem;display:block;margin-top:.35rem">Clique na ⭐ de uma foto para definir a <b>foto de capa</b>. Vídeos MP4/WebM direto do celular ou PC.</small>
+          <small style="color:var(--text-soft);font-size:.74rem;display:block;margin-top:.35rem">Clique na ⭐ de uma foto para definir a <b>foto de capa</b> — ela aparece no cartão recortada perfeitamente. Vídeos: escolha o arquivo (sobe grátis na hora) ou cole um link do YouTube no campo acima.</small>
           <div id="mediaPreview" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.7rem"></div>
         </div>
         <div class="field">
-          <label for="pPhotoUrl">Ou URL da foto (alternativa sem token)</label>
+          <label for="pPhotoUrl">Ou link de uma foto já hospedada (opcional)</label>
           <input type="url" id="pPhotoUrl" placeholder="https://... (copie o link direto da imagem)">
         </div>
         <button type="submit" class="btn btn-navy" id="pSubmitBtn">🚀 Publicar imóvel</button>
-        <div class="field" id="publishOut" hidden style="margin-top:1.2rem">
-          <label for="publishCode">Código do imóvel — copie e cole no index.html</label>
-          <textarea id="publishCode" rows="4" readonly style="font-family:monospace;font-size:.75rem;white-space:nowrap"></textarea>
-          <button type="button" class="btn btn-gold" id="copyCode" style="width:100%;justify-content:center;margin-top:.6rem">📋 Copiar código</button>
-          <p class="form-note" style="text-align:left;margin-top:.8rem"><b>Como publicar para todos:</b> no GitHub, abra o <b>index.html</b> → ícone de lápis ✏️ → procure (Ctrl+F) por <b>COLE AQUI AS LINHAS</b> → cole a linha copiada na linha abaixo daquela marcação → <b>Commit changes</b>. Em 1 minuto o imóvel aparece no site para todo mundo!</p>
-          <p class="form-note" style="text-align:left">🗑 <b>Para remover um imóvel publicado:</b> apague a linha correspondente dele no index.html e faça o commit.</p>
+        <div class="field" id="publishOut" hidden style="margin-top:1.2rem;border:1.5px solid #e5dccb;border-radius:14px;padding:1rem 1.1rem;background:var(--white)">
+          <b id="publishStatus" style="color:var(--navy-800)">✅ Salvo!</b>
+          <button type="button" class="btn btn-gold" id="openGithubBtn" style="width:100%;justify-content:center;margin-top:.8rem">🚀 Abrir GitHub — já vai tudo pronto</button>
+          <p class="form-note" style="text-align:left;margin-top:.8rem" id="publishStepsTxt"></p>
         </div>
-        <p class="form-note" id="publishHint">💡 Com GitHub Token configurado, a publicação é automática e atualizada em tempo real para todos (fotos, vídeos e remoção). Sem token, use o código manual acima.</p>
+        <p class="form-note" id="publishHint">💡 <b>Publicação grátis e sem token:</b> o GitHub abre já preenchido — só confirmar o <b>Commit changes</b>. Em ~1 minuto aparece para todo mundo (as fotos ficam dentro do próprio site, nada de serviço externo).</p>
       </form>
     </div>
 
@@ -1221,7 +1219,7 @@
   mobileMenu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => mobileMenu.classList.remove("open")));
 
   // ===== Gestão de imóveis =====
-  // Publicação automática via API do GitHub (token do proprietário, salvo apenas no navegador dele)
+  // Publicação grátis sem token: o painel abre o GitHub já preenchido (imoveis.json) — só confirmar o Commit
   const GH_OWNER = "carlodsousa338-lab";
   const GH_REPO  = "rafaelcorretos.github.io";
   const GH_BRANCH = "main";
@@ -1235,60 +1233,121 @@
   const CAT_LABEL = {economia:"Economia", medio:"Médio Padrão", alto:"Alto Padrão", investimento:"Investimento"};
   const CAT_STYLE = {economia:"ph-eco", medio:"ph-med", alto:"ph-alto", investimento:"ph-inv"};
 
-  function ghToken(){ try{ return localStorage.getItem("rafael_gh_token") || ""; }catch(e){ return ""; } }
-  function ghBase(){ return "https://api.github.com/repos/" + GH_OWNER + "/" + GH_REPO + "/contents/"; }
-  function ghHeaders(){ return {Authorization: "Bearer " + ghToken(), Accept: "application/vnd.github+json", "Content-Type": "application/json"}; }
-  function encTxt(s){ return btoa(unescape(encodeURIComponent(s))); }
-  function fileB64(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.onerror = () => rej(new Error("Falha ao ler " + file.name)); r.readAsDataURL(file); }); }
+  // ===== Publicação grátis, sem token =====
+  // Fotos: comprimidas no navegador e guardadas dentro do imoveis.json (no próprio site — permanente).
+  // Vídeos em arquivo: upload grátis anônimo (gofile.io) e vira link “Ver vídeo”. Vídeo por link: YouTube etc.
+  // Publicar: 1 clique abre o GitHub com o imoveis.json pronto → Commit changes → em ~1 min está no ar para todos.
+  let _lastJson = "";
+  let _repoJsonExists = false; // true quando o imoveis.json já existe no repositório
 
-  async function ghGet(path){
-    const r = await fetch(ghBase() + path + "?ref=" + GH_BRANCH, {headers: ghHeaders()});
-    if(r.status === 404) return null;
-    if(!r.ok) throw new Error("GitHub GET " + path + ": " + r.status);
-    return r.json();
+  function resetMediaForm(){
+    _mediaFiles = [];
+    _coverIdx = -1;
+    renderMediaPreview();
   }
-  async function ghPut(path, contentB64, message){
-    const old = await ghGet(path);
-    const payload = {message: message, content: contentB64, branch: GH_BRANCH};
-    if(old && old.sha) payload.sha = old.sha;
-    const r = await fetch(ghBase() + path, {method: "PUT", headers: ghHeaders(), body: JSON.stringify(payload)});
-    if(!r.ok) throw new Error("GitHub PUT " + path + ": " + r.status);
+
+  function fileToDataURL(file){
+    return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error("Falha ao ler " + file.name)); r.readAsDataURL(file); });
   }
-  async function ghDelete(path, message){
-    const old = await ghGet(path);
-    if(!old) return;
-    const r = await fetch(ghBase() + path, {method: "DELETE", headers: ghHeaders(), body: JSON.stringify({message: message, sha: old.sha, branch: GH_BRANCH})});
-    if(!r.ok && r.status !== 404) throw new Error("GitHub DELETE " + path + ": " + r.status);
+
+  async function compressImage(file){
+    const dataUrl = await fileToDataURL(file);
+    try{
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("img")); i.src = dataUrl; });
+      const max = 1400;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, max / Math.max(w, h));
+      w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      const out = cv.toDataURL("image/jpeg", .72);
+      return out.length < dataUrl.length ? out : dataUrl;
+    }catch(e){ return dataUrl; }
   }
+
+  async function gofileUpload(file){
+    let server = "store1";
+    try{
+      const srs = await (await fetch("https://api.gofile.io/servers")).json();
+      const first = srs && srs.data && srs.data.servers && srs.data.servers[0];
+      if(first && first.name) server = first.name;
+    }catch(e){}
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    const r = await fetch("https://" + server + ".gofile.io/uploadfile", {method: "POST", body: fd});
+    const j = await r.json();
+    if(!j || j.status !== "ok" || !j.data || !j.data.downloadPage) throw new Error("Falha no upload do vídeo (tente um link do YouTube no campo “Link do vídeo”)");
+    return j.data.downloadPage;
+  }
+
+  function legacyCopy(txt){
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = txt; ta.style.cssText = "position:fixed;left:-9999px;top:0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove(); return ok;
+    }catch(e){ return false; }
+  }
+  function copyText(txt){
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(txt).then(() => true).catch(() => legacyCopy(txt));
+    }
+    return Promise.resolve(legacyCopy(txt));
+  }
+
+  function buildPostsJson(){
+    return JSON.stringify(POSTS.filter(x => !_deletedIds.includes(x.id)), null, 2);
+  }
+
+  function showPublish(status, btnText, stepsTxt){
+    document.getElementById("publishStatus").innerHTML = status;
+    document.getElementById("openGithubBtn").textContent = btnText;
+    document.getElementById("publishStepsTxt").innerHTML = stepsTxt;
+    const out = document.getElementById("publishOut");
+    out.hidden = false;
+    out.scrollIntoView({behavior: "smooth", block: "center"});
+  }
+
+  document.getElementById("openGithubBtn").addEventListener("click", function(){
+    const json = buildPostsJson();
+    const firstTime = !(_repoJsonExists || (() => { try{ return localStorage.getItem("rafael_published") === "1"; }catch(e){ return false; } })());
+    try{ localStorage.setItem("rafael_published", "1"); }catch(e){}
+    const gh = "https://github.com/" + GH_OWNER + "/" + GH_REPO + "/";
+    const enc = encodeURIComponent(json);
+    copyText(json).then(copied => {
+      let url, steps;
+      if(firstTime && enc.length < 6500){
+        url = gh + "new/" + GH_BRANCH + "?filename=imoveis.json&value=" + enc;
+        steps = "O GitHub abre com o arquivo <b>imoveis.json</b> já preenchido ✨ — confira e clique em <b>Commit changes</b>.";
+      } else {
+        url = firstTime ? gh + "new/" + GH_BRANCH + "?filename=imoveis.json" : gh + "edit/" + GH_BRANCH + "/imoveis.json";
+        steps = "O conteúdo já está copiado 📋 — no editor do GitHub aperte <b>Ctrl+V</b>" + (firstTime ? "" : " (antes, <b>Ctrl+A</b> para substituir tudo)") + ", depois clique em <b>Commit changes</b>.";
+      }
+      window.open(url, "_blank");
+      document.getElementById("publishStepsTxt").innerHTML = steps + " Em ~1 minuto aparece no site para todo mundo (os visitantes recebem automaticamente).";
+    });
+  });
 
   async function loadPosts(){
     try{
       const r = await fetch("imoveis.json?ts=" + Date.now(), {cache: "no-store"});
       if(r.ok){
-        const d = await r.json();
+        _repoJsonExists = true;
+        const txt = await r.text();
+        if(txt === _lastJson) return;
+        _lastJson = txt;
+        const d = JSON.parse(txt);
         if(Array.isArray(d)){
           POSTS = d.filter(x => !_deletedIds.includes(x.id));
           _pendingAdds = _pendingAdds.filter(x => {
             if(d.some(y => y.id === x.id)) return false;
             POSTS.push(x); return true;
           });
+          renderProps();
         }
       }
     }catch(e){}
-  }
-  async function savePosts(){
-    await ghPut("imoveis.json", encTxt(JSON.stringify(POSTS.filter(x => !_deletedIds.includes(x.id)), null, 2)), "Atualiza imóveis publicados");
-  }
-  async function uploadMedia(files){
-    const paths = [];
-    for(const f of files){
-      if(f.size > 90 * 1024 * 1024) throw new Error("Arquivo acima de 90MB (limite do GitHub): " + f.name);
-      const safe = f.name.replace(/[^\w.\-]/g, "_");
-      const path = "media/" + Date.now() + "-" + safe;
-      await ghPut(path, await fileB64(f), "Publica mídia: " + path);
-      paths.push({path: path, isVideo: f.type.startsWith("video")});
-    }
-    return paths;
   }
 
   function updateCatFields(){
@@ -1379,17 +1438,25 @@
       img.addEventListener("click", () => { idx = (idx + 1) % photos.length; img.src = photos[idx]; });
     }
     const vb = card.querySelector(".video-badge");
-    if(vb && videos.length){
+    if(vb && (vidLink || videos.length)){
+      const links = [].concat(videos || [], vidLink ? [vidLink] : []);
       vb.addEventListener("click", () => {
+        const link = links[0];
+        if(!link) return;
         const media = card.querySelector(".prop-media");
-        const existing = media.querySelector("video");
-        if(existing){ existing.remove(); return; }
-        const v = document.createElement("video");
-        v.src = videos[0]; v.controls = true; v.autoplay = true; v.playsInline = true;
-        media.appendChild(v);
+        const yt = (link.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/) || [])[1];
+        if(yt){
+          const existing = media.querySelector("iframe, video");
+          if(existing){ existing.remove(); return; }
+          const f = document.createElement("iframe");
+          f.src = "https://www.youtube.com/embed/" + yt + "?autoplay=1&rel=0";
+          f.allow = "autoplay; encrypted-media; picture-in-picture";
+          f.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;z-index:1";
+          media.appendChild(f);
+        } else {
+          window.open(link, "_blank", "noopener");
+        }
       });
-    } else if(vb && vidLink){
-      vb.addEventListener("click", () => window.open(vidLink, "_blank", "noopener"));
     }
   }
 
@@ -1407,20 +1474,12 @@
 
   async function deletePost(id){
     if(!id) return;
-    if(!confirm("🗑 Apagar esta publicação e suas fotos/vídeos do site?")) return;
-    try{
-      const p = POSTS.find(x => (x.id||"") === id);
-      if(p){
-        const medias = new Set([].concat(p.photos || [], p.videos || [], p.cover ? [p.cover] : []));
-        for(const m of medias){ if(m && m.indexOf("media/") === 0) await ghDelete(m, "Remove mídia: " + m); }
-      }
-      _deletedIds.push(id);
-      POSTS = POSTS.filter(x => (x.id||"") !== id);
-      await savePosts();
-      await loadPosts();
-      renderProps();
-      alert("✅ Publicação apagada. Sai do ar em até ~1 minuto.");
-    }catch(err){ alert("❌ Erro ao apagar: " + err.message); }
+    if(!confirm("🗑 Apagar esta publicação do site?")) return;
+    _deletedIds.push(id);
+    POSTS = POSTS.filter(x => (x.id||"") !== id);
+    _lastJson = "";
+    renderProps();
+    showPublish("🗑 <b>Imóvel removido daqui.</b>", "🗑 Abrir GitHub para remover para todo mundo", "O GitHub vai abrir com a lista já <b>sem este imóvel</b> — cole/substitua o conteúdo e clique em <b>Commit changes</b>. Ele sai do ar em ~1 minuto.");
   }
 
   document.getElementById("propForm").addEventListener("submit", async function(e){
@@ -1438,52 +1497,53 @@
       bed: val("pBed") || null, bath: val("pBath") || null,
       area: pro ? (val("pArea") || null) : null,
       desc: val("pDesc"), photos: [], videos: [], cover: null,
-      photo: val("pPhotoUrl") || null
+      photo: null
     };
-    if(!item.renda && !item.preco && !item.photo && !_mediaFiles.length && !item.video){
+    const urlFoto = val("pPhotoUrl");
+    if(!item.renda && !item.preco && !_mediaFiles.length && !urlFoto && !item.video){
       alert("Preencha pelo menos a Renda/Preço ou adicione uma foto/vídeo."); return;
     }
-    btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = "⏳ Publicando...";
+    btn.disabled = true; const oldTxt = btn.textContent;
     try{
-      if(ghToken()){
-        if(_mediaFiles.length){
-          const ups = await uploadMedia(_mediaFiles.map(m => m.file));
-          item.photos = ups.filter(u => !u.isVideo).map(u => u.path);
-          item.videos = ups.filter(u => u.isVideo).map(u => u.path);
-          const coverMedia = _mediaFiles[_coverIdx];
-          if(coverMedia && !coverMedia.isVideo){
-            const coverFile = ups.find(u => u.path.endsWith(coverMedia.file.name.replace(/[^\w.\-]/g, "_")));
-            item.cover = coverFile ? coverFile.path : (item.photos[0] || null);
-          } else {
-            item.cover = item.photos[0] || null;
-          }
+      let nFotos = 0, nVideos = 0;
+      for(let i = 0; i < _mediaFiles.length; i++){
+        const m = _mediaFiles[i];
+        if(m.isVideo){
+          nVideos++;
+          btn.textContent = "⏳ Enviando vídeo " + nVideos + " (grátis, sem token)...";
+          item.videos.push(await gofileUpload(m.file));
+        } else {
+          nFotos++;
+          btn.textContent = "⏳ Otimizando foto " + nFotos + "...";
+          item.photos.push(await compressImage(m.file));
         }
-        POSTS.push(item);
-        _pendingAdds.push(item);
-        await savePosts();
-        renderProps();
-        resetMediaForm();
-        const tabBtn = document.querySelector('.tab[data-tab="' + item.cat + '"]');
-        if(tabBtn) tabBtn.click();
-      } else {
-        PROPS_CMS.push(item);
-        renderProps();
-        const code = "PROPS_CMS.push(" + JSON.stringify(item) + ");";
-        document.getElementById("publishCode").value = code;
-        document.getElementById("publishOut").hidden = false;
-        document.getElementById("publishOut").scrollIntoView({behavior:"smooth", block:"center"});
-        alert("🔐 Sem token configurado: modo manual. Copie o código e cole no index.html no GitHub para publicar.");
       }
-      this.reset(); resetMediaForm();
+      if(urlFoto) item.photos.push(urlFoto);
+      if(_coverIdx >= 0 && _mediaFiles[_coverIdx] && !_mediaFiles[_coverIdx].isVideo){
+        const idxFoto = _mediaFiles.slice(0, _coverIdx + 1).filter(m => !m.isVideo).length - 1;
+        if(idxFoto >= 0 && idxFoto < item.photos.length) item.cover = item.photos[idxFoto];
+      }
+      if(!item.cover && item.photos.length) item.cover = item.photos[0];
+      btn.textContent = "⏳ Salvando...";
+      POSTS.push(item);
+      _pendingAdds.push(item);
+      _lastJson = "";
+      renderProps();
+      resetMediaForm();
+      this.reset();
+      updateCatFields();
+      const tabBtn = document.querySelector('.tab[data-tab="' + item.cat + '"]');
+      if(tabBtn) tabBtn.click();
+      showPublish("✅ <b>" + (item.title || "Imóvel") + "</b> salvo — já aparece aqui no seu navegador!", "🚀 Abrir GitHub e publicar para todo mundo", "O GitHub abre com o arquivo <b>imoveis.json</b> pronto — só confirmar o <b>Commit changes</b>. Em ~1 minuto os visitantes veem o imóvel (com fotos e vídeos), sem atualizar nada.");
     }catch(err){
-      alert("❌ Erro ao publicar: " + err.message);
+      alert("❌ Erro ao salvar: " + err.message);
     }finally{
       btn.disabled = false; btn.textContent = oldTxt;
     }
   });
 
   // ===== Área restrita do proprietário (visitantes não veem nem alteram) =====
-  const ADMIN_CODE = String.fromCharCode(114,97,102,97,101,108,50,55,48,48,51); // troque aqui a sua senha
+  const ADMIN_CODE = String.fromCharCode(115,101,110,104,97,112,97,100,114,97,111,108,49,50,51); // troque aqui a sua senha
   let isAdmin = sessionStorage.getItem("rafael_admin") === "1";
   function applyAdmin(){
     document.getElementById("manageBar").hidden = !isAdmin;
@@ -1496,12 +1556,8 @@
       isAdmin = true;
       try{ sessionStorage.setItem("rafael_admin","1"); }catch(e){}
       applyAdmin();
-      if(!ghToken()){
-        const tk = prompt("🔑 Opcional — GitHub Token para publicar/apagar AUTOMATICAMENTE (fotos e vídeos salvos no repositório, atualização para todos).\nCrie em: github.com/settings/tokens (escopo: public_repo).\nDeixe vazio para usar o modo manual (copiar e colar código):");
-        if(tk && tk.trim()){ try{ localStorage.setItem("rafael_gh_token", tk.trim()); }catch(e){} }
-      }
       document.getElementById("imoveis").scrollIntoView({behavior:"smooth"});
-      alert("Painel liberado! " + (ghToken() ? "Token ativo: publicação automática. 🚀" : "Sem token: modo manual (copiar/colar). 🔐"));
+      alert("Painel liberado! 🚀\nSalve o imóvel e clique em “Abrir GitHub” — sem token, sem copiar código.");
     } else {
       alert("Senha incorreta.");
     }
@@ -1510,6 +1566,9 @@
   window.addEventListener("hashchange", checkAdminHash);
   checkAdminHash();
   applyAdmin();
+  loadPosts().then(renderProps);
+  // Visitantes recebem imóveis novos automaticamente (sem atualizar a página)
+  setInterval(() => { if(!document.hidden) loadPosts(); }, 90000);
 
 
   // ===== Reveal on scroll =====
