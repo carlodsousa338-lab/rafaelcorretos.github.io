@@ -1119,6 +1119,16 @@
   document.getElementById("waFab").href = waLink(waMsg);
   document.getElementById("waHeroBtn").href = waLink(waMsg);
 
+  // Botão "Adicionar imóvel" — delegação resiliente (funciona mesmo se outro script falhar)
+  document.addEventListener("click", function(e){
+    const t = e.target.closest("#toggleManage");
+    if(!t) return;
+    const c = document.getElementById("manageCard");
+    if(!c) return;
+    c.hidden = !c.hidden;
+    if(!c.hidden){ c.scrollIntoView({behavior:"smooth", block:"start"}); }
+  });
+
   // ===== Lead form -> WhatsApp (com perfil financeiro) =====
   const PERFIL_KEY = "rafael_perfil_v1";
   const formMain = document.getElementById("formMain");
@@ -1470,12 +1480,6 @@
     }finally{
       btn.disabled = false; btn.textContent = oldTxt;
     }
-  });
-
-  document.getElementById("toggleManage").addEventListener("click", () => {
-    const c = document.getElementById("manageCard");
-    c.hidden = !c.hidden;
-    if(!c.hidden){ c.scrollIntoView({behavior:"smooth", block:"start"}); }
   });
 
   // ===== Área restrita do proprietário (visitantes não veem nem alteram) =====
