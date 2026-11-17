@@ -587,6 +587,7 @@
 <!-- Painel de gestão — uso do corretor -->
     <div class="manage-bar" id="manageBar" hidden>
       <button class="btn btn-gold" id="toggleManage" type="button">＋ Adicionar imóvel</button>
+      <button class="btn btn-navy" id="adminExit" type="button" style="padding:.6rem 1.2rem">🔒 Sair do painel</button>
       <span class="manage-hint">Painel do corretor — salve o imóvel e publique para todo mundo com 1 clique no GitHub. Grátis, sem token, sem copiar código.</span>
     </div>
     <div class="form-card manage-card" id="manageCard" hidden>
@@ -1119,6 +1120,14 @@
 
   // Botão "Adicionar imóvel" — delegação resiliente (funciona mesmo se outro script falhar)
   document.addEventListener("click", function(e){
+    if(e.target.closest("#adminExit")){
+      isAdmin = false;
+      const c = document.getElementById("manageCard");
+      if(c) c.hidden = true;
+      applyAdmin();
+      alert("Painel oculto. Para abrir de novo, entre com #admin e a senha.");
+      return;
+    }
     const t = e.target.closest("#toggleManage");
     if(!t) return;
     const c = document.getElementById("manageCard");
@@ -1128,7 +1137,7 @@
   });
 
   // ===== Lead form -> WhatsApp (com perfil financeiro) =====
-  const PERFIL_KEY = "rafael_perfil_v1";
+  // O perfil fica só na memória da aba: após enviar ou recarregar, volta ao padrão.
   const formMain = document.getElementById("formMain");
   const formPerfil = document.getElementById("formPerfil");
   const leadSubmit = document.getElementById("leadSubmit");
@@ -1156,9 +1165,20 @@
   document.getElementById("openPerfil").addEventListener("click", () => slideViews(true));
   document.getElementById("pfSave").addEventListener("click", () => { if(pfComplete()) document.getElementById("pfConfirm").hidden = false; });
   document.getElementById("pfNo").addEventListener("click", () => { document.getElementById("pfConfirm").hidden = true; });
+  function perfilReset(){
+    _perfil = null;
+    document.getElementById("pfRenda").value = "";
+    ["pfVinculo","pfAnos","pfCasado","pfRestricao"].forEach(n => document.querySelectorAll('input[name="' + n + '"]').forEach(r => r.checked = false));
+    document.getElementById("pfConfirm").hidden = true;
+    pfRefreshSave();
+    const ob = document.getElementById("openPerfil");
+    ob.classList.remove("done");
+    ob.textContent = "🪙 Responder perguntas";
+    formPerfil.hidden = true;
+    formMain.hidden = false;
+  }
   document.getElementById("pfYes").addEventListener("click", () => {
     _perfil = {vinculo: pfVal("pfVinculo"), renda: document.getElementById("pfRenda").value.trim(), anos: pfVal("pfAnos"), casado: pfVal("pfCasado"), restricao: pfVal("pfRestricao")};
-    try{ localStorage.setItem(PERFIL_KEY, JSON.stringify(_perfil)); }catch(e){}
     document.getElementById("pfConfirm").hidden = true;
     const ob = document.getElementById("openPerfil");
     ob.classList.add("done");
@@ -1167,19 +1187,6 @@
     leadSubmit.classList.add("glow");
     setTimeout(() => leadSubmit.classList.remove("glow"), 9000);
   });
-  try{
-    const saved = JSON.parse(localStorage.getItem(PERFIL_KEY) || "null");
-    if(saved){
-      _perfil = saved;
-      document.getElementById("pfRenda").value = saved.renda || "";
-      const setRadio = (n, v) => { const r = document.querySelector('input[name="' + n + '"][value="' + v + '"]'); if(r) r.checked = true; };
-      setRadio("pfVinculo", saved.vinculo); setRadio("pfAnos", saved.anos); setRadio("pfCasado", saved.casado); setRadio("pfRestricao", saved.restricao);
-      const ob = document.getElementById("openPerfil");
-      ob.classList.add("done");
-      ob.textContent = "✅ Perfil salvo — editar";
-      pfRefreshSave();
-    }
-  }catch(e){}
 
   document.getElementById("leadForm").addEventListener("submit", function(e){
     e.preventDefault();
@@ -1194,6 +1201,8 @@
     }
     window.open(waLink(msg), "_blank");
     leadSubmit.classList.remove("glow");
+    this.reset();
+    perfilReset();
   });
 
   // ===== Tabs =====
@@ -1544,7 +1553,8 @@
 
   // ===== Área restrita do proprietário (visitantes não veem nem alteram) =====
   const ADMIN_CODE = String.fromCharCode(115,101,110,104,97,112,97,100,114,97,111,108,49,50,51); // troque aqui a sua senha
-  let isAdmin = sessionStorage.getItem("rafael_admin") === "1";
+  // Admin vale só nesta aba/enquanto aberto: ao recarregar ou fechar, a página volta ao normal
+  let isAdmin = false;
   function applyAdmin(){
     document.getElementById("manageBar").hidden = !isAdmin;
     renderProps();
@@ -1554,10 +1564,9 @@
     if(pw === null) return;
     if(pw === ADMIN_CODE){
       isAdmin = true;
-      try{ sessionStorage.setItem("rafael_admin","1"); }catch(e){}
       applyAdmin();
       document.getElementById("imoveis").scrollIntoView({behavior:"smooth"});
-      alert("Painel liberado! 🚀\nSalve o imóvel e clique em “Abrir GitHub” — sem token, sem copiar código.");
+      alert("Painel liberado! 🚀\nSalve o imóvel e clique em “Abrir GitHub” — sem token, sem copiar código.\nAo recarregar a página, o painel volta a ficar oculto.");
     } else {
       alert("Senha incorreta.");
     }
