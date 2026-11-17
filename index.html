@@ -256,6 +256,31 @@
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
   .form-card .btn{width:100%;justify-content:center;margin-top:.4rem}
   .form-note{font-size:.74rem;color:var(--text-soft);text-align:center;margin-top:.9rem}
+  /* ===== perfil financeiro do lead ===== */
+  #formPerfil{position:relative}
+  .fslide-out{animation:fvOut .32s ease forwards}
+  .fslide-in{animation:fvIn .55s cubic-bezier(.2,.8,.25,1) forwards}
+  @keyframes fvOut{to{opacity:0;transform:translateX(-30px) scale(.97)}}
+  @keyframes fvIn{from{opacity:0;transform:translateX(36px) scale(.96)}to{opacity:1;transform:none}}
+  .perfil-btn{width:100%;padding:.85rem 1rem;border-radius:12px;border:1.5px dashed var(--gold-500);background:rgba(201,162,39,.08);color:var(--brown-600);font-family:inherit;font-weight:600;font-size:.9rem;cursor:pointer;transition:.25s}
+  .perfil-btn:hover{background:rgba(201,162,39,.18);transform:translateY(-1px)}
+  .perfil-btn.done{border-style:solid;background:rgba(46,125,80,.1);color:#2e7d32}
+  .pf-intro{font-size:.85rem;color:var(--text-soft);margin-bottom:1rem}
+  .pf-opts{display:flex;gap:.5rem;flex-wrap:wrap}
+  .pf-opt{position:relative}
+  .pf-opt input{position:absolute;opacity:0;pointer-events:none}
+  .pf-opt span{display:inline-block;padding:.5rem .95rem;border:1.5px solid #ddd2bd;border-radius:999px;font-size:.85rem;font-weight:600;cursor:pointer;color:var(--text-soft);transition:.2s;background:var(--cream)}
+  .pf-opt input:checked + span{background:linear-gradient(135deg,var(--navy-800),var(--navy-600));color:var(--gold-300);border-color:var(--navy-800)}
+  .pf-save{display:block;margin-left:auto;background:linear-gradient(135deg,var(--gold-400),var(--gold-500));color:var(--navy-900);border:none;border-radius:999px;padding:.7rem 1.7rem;font-weight:700;font-family:inherit;cursor:pointer;transition:.25s}
+  .pf-save:disabled{opacity:.45;cursor:not-allowed}
+  .pf-save:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 8px 20px -6px rgba(201,162,39,.55)}
+  .pf-confirm{position:absolute;inset:-8px;background:rgba(247,243,236,.96);border-radius:20px;display:flex;align-items:center;justify-content:center;z-index:5;animation:fvIn .4s ease}
+  .pf-confirm-box{text-align:center;padding:1rem}
+  .pf-confirm-box b{font-family:'Playfair Display',serif;color:var(--navy-800);font-size:1.15rem;display:block;margin-bottom:.3rem}
+  .pf-confirm-box p{font-size:.85rem;color:var(--text-soft);margin-bottom:1.1rem}
+  .pf-confirm-btns{display:flex;gap:.7rem;justify-content:center}
+  @keyframes goldGlow{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.30)}50%{box-shadow:0 0 26px 6px rgba(201,162,39,.55)}}
+  .btn.glow{animation:goldGlow 2.4s ease-in-out infinite;border-color:var(--gold-400)}
 
   /* ===== footer ===== */
   footer{background:var(--navy-900);color:rgba(247,243,236,.7);padding:64px 0 28px}
@@ -945,33 +970,75 @@
         <h3>Conte o que você procura</h3>
         <p>Leva menos de 1 minuto. Eu mesmo respondo cada mensagem.</p>
         <form id="leadForm">
+          <div id="formMain" class="fview">
           <div class="field-row">
             <div class="field">
               <label for="fname">Seu nome *</label>
               <input type="text" id="fname" placeholder="Ex.: João Silva" required>
             </div>
             <div class="field">
-              <label for="fphone">WhatsApp *</label>
-              <input type="tel" id="fphone" placeholder="(85) 00000-0000" required>
+              <label for="openPerfil">Seu perfil financeiro (opcional)</label>
+              <button type="button" id="openPerfil" class="perfil-btn">🪙 Responder perguntas</button>
             </div>
           </div>
           <div class="field">
-            <label for="finterest">Seu objetivo *</label>
-            <select id="finterest" required>
-              <option value="" disabled selected>Selecione uma opção</option>
-              <option>Comprar — Economia</option>
-              <option>Comprar — Médio Padrão</option>
-              <option>Comprar — Alto Padrão</option>
-              <option>Investir</option>
-              <option>Vender meu imóvel</option>
-              <option>Avaliar meu imóvel (gratuito)</option>
-            </select>
+            <label for="fMotivo">Motivo *</label>
+            <input type="text" id="fMotivo" placeholder="Ex.: Quero comprar meu primeiro apê perto do trabalho" required>
           </div>
           <div class="field">
             <label for="fmsg">Mensagem (opcional)</label>
             <textarea id="fmsg" rows="3" placeholder="Ex.: Procuro um apê de 2 quartos até R$ 300 mil, perto do trabalho..."></textarea>
           </div>
-          <button type="submit" class="btn btn-navy">
+          </div>
+          <div id="formPerfil" class="fview" hidden>
+            <p class="pf-intro">As informações abaixo servem para identificar seu perfil. 🔎</p>
+            <div class="field">
+              <label>1 · Você trabalha de carteira assinada ou é autônomo(a)? *</label>
+              <div class="pf-opts">
+                <label class="pf-opt"><input type="radio" name="pfVinculo" value="Carteira assinada (CLT)"><span>Carteira assinada</span></label>
+                <label class="pf-opt"><input type="radio" name="pfVinculo" value="Autônomo(a)"><span>Autônomo(a)</span></label>
+                <label class="pf-opt"><input type="radio" name="pfVinculo" value="CLT + autônomo"><span>Os dois</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="pfRenda">2 · Qual a sua renda bruta do contracheque, sem os descontos? Em caso de autônomo(a), qual a sua renda média mensal? *</label>
+              <input type="text" id="pfRenda" placeholder="Ex.: R$ 3.200,00">
+            </div>
+            <div class="field">
+              <label>3 · Já trabalhou mais de 3 anos de carteira assinada? (Juntando todos os trabalhos da vida) *</label>
+              <div class="pf-opts">
+                <label class="pf-opt"><input type="radio" name="pfAnos" value="Sim"><span>Sim</span></label>
+                <label class="pf-opt"><input type="radio" name="pfAnos" value="Não"><span>Não</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>4 · Você é casado(a) no papel? *</label>
+              <div class="pf-opts">
+                <label class="pf-opt"><input type="radio" name="pfCasado" value="Sim"><span>Sim</span></label>
+                <label class="pf-opt"><input type="radio" name="pfCasado" value="Não"><span>Não</span></label>
+                <label class="pf-opt"><input type="radio" name="pfCasado" value="União estável"><span>União estável</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>5 · Tem alguma restrição no nome? *</label>
+              <div class="pf-opts">
+                <label class="pf-opt"><input type="radio" name="pfRestricao" value="Sim"><span>Sim</span></label>
+                <label class="pf-opt"><input type="radio" name="pfRestricao" value="Não"><span>Não</span></label>
+              </div>
+            </div>
+            <button type="button" id="pfSave" class="pf-save" disabled>💾 Salvar</button>
+            <div class="pf-confirm" id="pfConfirm" hidden>
+              <div class="pf-confirm-box">
+                <b>Tudo certo com as informações? 🤝</b>
+                <p>Elas vão junto com a sua mensagem para o Rafael.</p>
+                <div class="pf-confirm-btns">
+                  <button type="button" id="pfYes" class="btn btn-gold">✅ Sim, salvar</button>
+                  <button type="button" id="pfNo" class="btn btn-navy">✖ Não, revisar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button type="submit" id="leadSubmit" class="btn btn-navy">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             Enviar pelo WhatsApp
           </button>
@@ -1052,16 +1119,73 @@
   document.getElementById("waFab").href = waLink(waMsg);
   document.getElementById("waHeroBtn").href = waLink(waMsg);
 
-  // ===== Lead form -> WhatsApp =====
+  // ===== Lead form -> WhatsApp (com perfil financeiro) =====
+  const PERFIL_KEY = "rafael_perfil_v1";
+  const formMain = document.getElementById("formMain");
+  const formPerfil = document.getElementById("formPerfil");
+  const leadSubmit = document.getElementById("leadSubmit");
+  let _perfil = null;
+  function pfVal(n){ const r = document.querySelector('input[name="' + n + '"]:checked'); return r ? r.value : ""; }
+  function pfComplete(){
+    return pfVal("pfVinculo") && document.getElementById("pfRenda").value.trim() && pfVal("pfAnos") && pfVal("pfCasado") && pfVal("pfRestricao");
+  }
+  function pfRefreshSave(){ document.getElementById("pfSave").disabled = !pfComplete(); }
+  ["pfVinculo","pfAnos","pfCasado","pfRestricao"].forEach(n => document.querySelectorAll('input[name="' + n + '"]').forEach(r => r.addEventListener("change", pfRefreshSave)));
+  document.getElementById("pfRenda").addEventListener("input", pfRefreshSave);
+
+  function slideViews(showPerfil){
+    const outEl = showPerfil ? formMain : formPerfil;
+    const inEl = showPerfil ? formPerfil : formMain;
+    outEl.classList.add("fslide-out");
+    setTimeout(() => {
+      outEl.hidden = true;
+      outEl.classList.remove("fslide-out");
+      inEl.hidden = false;
+      inEl.classList.add("fslide-in");
+      setTimeout(() => inEl.classList.remove("fslide-in"), 620);
+    }, 330);
+  }
+  document.getElementById("openPerfil").addEventListener("click", () => slideViews(true));
+  document.getElementById("pfSave").addEventListener("click", () => { if(pfComplete()) document.getElementById("pfConfirm").hidden = false; });
+  document.getElementById("pfNo").addEventListener("click", () => { document.getElementById("pfConfirm").hidden = true; });
+  document.getElementById("pfYes").addEventListener("click", () => {
+    _perfil = {vinculo: pfVal("pfVinculo"), renda: document.getElementById("pfRenda").value.trim(), anos: pfVal("pfAnos"), casado: pfVal("pfCasado"), restricao: pfVal("pfRestricao")};
+    try{ localStorage.setItem(PERFIL_KEY, JSON.stringify(_perfil)); }catch(e){}
+    document.getElementById("pfConfirm").hidden = true;
+    const ob = document.getElementById("openPerfil");
+    ob.classList.add("done");
+    ob.textContent = "✅ Perfil salvo — editar";
+    slideViews(false);
+    leadSubmit.classList.add("glow");
+    setTimeout(() => leadSubmit.classList.remove("glow"), 9000);
+  });
+  try{
+    const saved = JSON.parse(localStorage.getItem(PERFIL_KEY) || "null");
+    if(saved){
+      _perfil = saved;
+      document.getElementById("pfRenda").value = saved.renda || "";
+      const setRadio = (n, v) => { const r = document.querySelector('input[name="' + n + '"][value="' + v + '"]'); if(r) r.checked = true; };
+      setRadio("pfVinculo", saved.vinculo); setRadio("pfAnos", saved.anos); setRadio("pfCasado", saved.casado); setRadio("pfRestricao", saved.restricao);
+      const ob = document.getElementById("openPerfil");
+      ob.classList.add("done");
+      ob.textContent = "✅ Perfil salvo — editar";
+      pfRefreshSave();
+    }
+  }catch(e){}
+
   document.getElementById("leadForm").addEventListener("submit", function(e){
     e.preventDefault();
     const n = document.getElementById("fname").value.trim();
-    const p = document.getElementById("fphone").value.trim();
-    const i = document.getElementById("finterest").value;
+    const motivo = document.getElementById("fMotivo").value.trim();
     const m = document.getElementById("fmsg").value.trim();
-    let msg = `Olá, Rafael! Meu nome é ${n}.\n📞 Contato: ${p}\n🎯 Objetivo: ${i}`;
+    if(!n || !motivo){ alert("Preencha seu nome e o motivo 🙂"); return; }
+    let msg = `Olá, Rafael! Meu nome é ${n}.\n🎯 Motivo: ${motivo}`;
     if(m) msg += `\n💬 ${m}`;
+    if(_perfil){
+      msg += `\n🪙 Meu perfil financeiro:\n1) Vínculo: ${_perfil.vinculo}\n2) Renda bruta: ${_perfil.renda}\n3) 3+ anos de carteira: ${_perfil.anos}\n4) Casado(a) no papel: ${_perfil.casado}\n5) Restrição no nome: ${_perfil.restricao}`;
+    }
     window.open(waLink(msg), "_blank");
+    leadSubmit.classList.remove("glow");
   });
 
   // ===== Tabs =====
@@ -1346,6 +1470,12 @@
     }finally{
       btn.disabled = false; btn.textContent = oldTxt;
     }
+  });
+
+  document.getElementById("toggleManage").addEventListener("click", () => {
+    const c = document.getElementById("manageCard");
+    c.hidden = !c.hidden;
+    if(!c.hidden){ c.scrollIntoView({behavior:"smooth", block:"start"}); }
   });
 
   // ===== Área restrita do proprietário (visitantes não veem nem alteram) =====
