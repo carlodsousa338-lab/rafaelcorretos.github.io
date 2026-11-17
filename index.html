@@ -296,6 +296,17 @@
   .prop-desc{font-size:.85rem;color:var(--text-soft)}
 
   .field-row.three{grid-template-columns:repeat(3,1fr)}
+  .thumb{position:relative;width:74px;height:74px;border-radius:10px;overflow:hidden;border:2px solid #ddd2bd;background:var(--navy-800);display:grid;place-items:center}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .tplay{color:#fff;font-size:1.2rem}
+  .thumb .tbar{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:.25rem;padding:2px;background:rgba(8,19,34,.55)}
+  .thumb .tbtn{border:none;background:rgba(255,255,255,.25);color:#fff;border-radius:6px;font-size:.72rem;cursor:pointer;padding:2px 6px;line-height:1}
+  .thumb .tbtn.star.on{background:var(--gold-500);color:var(--navy-900)}
+  .thumb.is-cover{border-color:var(--gold-500)}
+  .photo-count{position:absolute;top:14px;right:14px;background:rgba(8,19,34,.85);color:var(--gold-300);font-size:.74rem;font-weight:600;padding:.35rem .7rem;border-radius:999px;border:1px solid rgba(201,162,39,.4);z-index:2}
+  .prop-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+  .prop-del{position:absolute;top:12px;right:12px;z-index:3;background:rgba(8,19,34,.85);border:1px solid rgba(192,57,43,.65);color:#ffb3a7;border-radius:999px;padding:.35rem .8rem;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit}
+  .prop-del:hover{background:#c0392b;border-color:#c0392b;color:#fff}
   .insta-card{display:block;position:relative;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);max-width:400px;margin:0 auto;border:1px solid #eee4d3;transition:.3s}
   .insta-card:hover{transform:translateY(-5px)}
   .insta-card img{width:100%;display:block}
@@ -577,29 +588,44 @@
             <label for="pLoc">Localização</label>
             <input type="text" id="pLoc" placeholder="Ex.: Bairro Montese · Fortaleza/CE">
           </div>
+          <div class="field" id="fieldRenda">
+            <label for="pRenda">Renda</label>
+            <input type="text" id="pRenda" placeholder="Ex.: R$ 1.200/mês · R$ 3.500/ano">
+          </div>
+        </div>
+        <div class="field-row" id="fieldPreco" hidden>
           <div class="field">
-            <label for="pPrice">Preço</label>
-            <input type="text" id="pPrice" placeholder="Ex.: R$ 350.000">
+            <label for="pPreco">Preço (opcional)</label>
+            <input type="text" id="pPreco" placeholder="Ex.: R$ 450.000">
           </div>
         </div>
         <div class="field">
           <label for="pVideo">Link do vídeo (YouTube, Drive, Reels...)</label>
           <input type="url" id="pVideo" placeholder="https://...">
         </div>
-        <div class="field-row three">
+        <div class="field-row">
           <div class="field"><label for="pBed">Quartos</label><input type="number" id="pBed" min="0" placeholder="0"></div>
           <div class="field"><label for="pBath">Banheiros</label><input type="number" id="pBath" min="0" placeholder="0"></div>
-          <div class="field"><label for="pArea">Área (m²)</label><input type="number" id="pArea" min="0" placeholder="0"></div>
+        </div>
+        <div class="field" id="fieldArea" hidden>
+          <label for="pArea">Área (m²)</label>
+          <input type="number" id="pArea" min="0" placeholder="Ex.: 180">
         </div>
         <div class="field">
           <label for="pDesc">Detalhes / descrição</label>
           <textarea id="pDesc" rows="2" placeholder="Ex.: Varanda gourmet, condomínio com segurança 24h, próximo a escolas..."></textarea>
         </div>
         <div class="field">
-          <label for="pPhotoUrl">URL da foto do imóvel *</label>
-          <input type="url" id="pPhotoUrl" placeholder="https://... (Instagram, imgur, Drive — copie o link direto da imagem)" required>
+          <label for="pMedia">Fotos e vídeos (sem limite) 📷🎬</label>
+          <input type="file" id="pMedia" multiple accept="image/*,video/*">
+          <small style="color:var(--text-soft);font-size:.74rem;display:block;margin-top:.35rem">Clique na ⭐ de uma foto para definir a <b>foto de capa</b>. Vídeos MP4/WebM direto do celular ou PC.</small>
+          <div id="mediaPreview" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.7rem"></div>
         </div>
-        <button type="submit" class="btn btn-navy">🏠 Gerar publicação do imóvel</button>
+        <div class="field">
+          <label for="pPhotoUrl">Ou URL da foto (alternativa sem token)</label>
+          <input type="url" id="pPhotoUrl" placeholder="https://... (copie o link direto da imagem)">
+        </div>
+        <button type="submit" class="btn btn-navy" id="pSubmitBtn">🚀 Publicar imóvel</button>
         <div class="field" id="publishOut" hidden style="margin-top:1.2rem">
           <label for="publishCode">Código do imóvel — copie e cole no index.html</label>
           <textarea id="publishCode" rows="4" readonly style="font-family:monospace;font-size:.75rem;white-space:nowrap"></textarea>
@@ -607,7 +633,7 @@
           <p class="form-note" style="text-align:left;margin-top:.8rem"><b>Como publicar para todos:</b> no GitHub, abra o <b>index.html</b> → ícone de lápis ✏️ → procure (Ctrl+F) por <b>COLE AQUI AS LINHAS</b> → cole a linha copiada na linha abaixo daquela marcação → <b>Commit changes</b>. Em 1 minuto o imóvel aparece no site para todo mundo!</p>
           <p class="form-note" style="text-align:left">🗑 <b>Para remover um imóvel publicado:</b> apague a linha correspondente dele no index.html e faça o commit.</p>
         </div>
-        <p class="form-note">💡 Dica: o painel mostra uma pré-visualização aqui na página — mas o imóvel só vai ao ar de verdade depois de colar o código no index.html.</p>
+        <p class="form-note" id="publishHint">💡 Com GitHub Token configurado, a publicação é automática e atualizada em tempo real para todos (fotos, vídeos e remoção). Sem token, use o código manual acima.</p>
       </form>
     </div>
 
@@ -1061,78 +1087,265 @@
   mobileMenu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => mobileMenu.classList.remove("open")));
 
   // ===== Gestão de imóveis =====
-  // Imóveis publicados (visíveis para TODOS) ficam nas linhas PROPS_CMS.push(...) abaixo.
-  const PROPS_CMS = [];
+  // Publicação automática via API do GitHub (token do proprietário, salvo apenas no navegador dele)
+  const GH_OWNER = "carlodsousa338-lab";
+  const GH_REPO  = "rafaelcorretos.github.io";
+  const GH_BRANCH = "main";
+  const PROPS_CMS = []; // fallback manual (linhas coladas)
   // >>> COLE AQUI AS LINHAS GERADAS PELO PAINEL — ex.: PROPS_CMS.push({"title":"..."}); <<<
+  let POSTS = [];        // imóveis publicados (imoveis.json no repositório)
+  let _pendingAdds = []; // publicados há menos de ~1 min (aguardando o build do Pages)
+  let _deletedIds = [];  // apagados há menos de ~1 min (aguardando o build do Pages)
+  let _mediaFiles = [];  // [{file, isVideo, url}] do formulário
+  let _coverIdx = -1;    // índice da foto de capa
   const CAT_LABEL = {economia:"Economia", medio:"Médio Padrão", alto:"Alto Padrão", investimento:"Investimento"};
   const CAT_STYLE = {economia:"ph-eco", medio:"ph-med", alto:"ph-alto", investimento:"ph-inv"};
 
-  function addPropCard(p){
-      const grid = document.querySelector('[data-grid="' + p.cat + '"]');
-      if(!grid) return;
-      const specs = [];
-      if(p.bed)  specs.push("🛏 " + p.bed  + (p.bed==1 ? " quarto" : " quartos"));
-      if(p.bath) specs.push("🛁 " + p.bath + (p.bath==1 ? " banheiro" : " banheiros"));
-      if(p.area) specs.push("📐 " + p.area + " m²");
-      const specsHtml = specs.map(s => "<span>" + s + "</span>").join("");
-      const card = document.createElement("article");
-      card.className = "prop-card";
-      card.innerHTML =
-        '<div class="prop-media">' +
-          (p.photo ? '<img src="' + p.photo + '" alt="' + (p.title||"Imóvel") + '">' : '<div class="ph ' + (CAT_STYLE[p.cat]||"") + '"></div>') +
-          '<span class="prop-tag blue">' + (CAT_LABEL[p.cat]||"") + '</span>' +
-          (p.video ? '<a class="video-badge" href="' + p.video + '" target="_blank" rel="noopener">▶ Ver vídeo</a>' : '') +
+  function ghToken(){ try{ return localStorage.getItem("rafael_gh_token") || ""; }catch(e){ return ""; } }
+  function ghBase(){ return "https://api.github.com/repos/" + GH_OWNER + "/" + GH_REPO + "/contents/"; }
+  function ghHeaders(){ return {Authorization: "Bearer " + ghToken(), Accept: "application/vnd.github+json", "Content-Type": "application/json"}; }
+  function encTxt(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function fileB64(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.onerror = () => rej(new Error("Falha ao ler " + file.name)); r.readAsDataURL(file); }); }
+
+  async function ghGet(path){
+    const r = await fetch(ghBase() + path + "?ref=" + GH_BRANCH, {headers: ghHeaders()});
+    if(r.status === 404) return null;
+    if(!r.ok) throw new Error("GitHub GET " + path + ": " + r.status);
+    return r.json();
+  }
+  async function ghPut(path, contentB64, message){
+    const old = await ghGet(path);
+    const payload = {message: message, content: contentB64, branch: GH_BRANCH};
+    if(old && old.sha) payload.sha = old.sha;
+    const r = await fetch(ghBase() + path, {method: "PUT", headers: ghHeaders(), body: JSON.stringify(payload)});
+    if(!r.ok) throw new Error("GitHub PUT " + path + ": " + r.status);
+  }
+  async function ghDelete(path, message){
+    const old = await ghGet(path);
+    if(!old) return;
+    const r = await fetch(ghBase() + path, {method: "DELETE", headers: ghHeaders(), body: JSON.stringify({message: message, sha: old.sha, branch: GH_BRANCH})});
+    if(!r.ok && r.status !== 404) throw new Error("GitHub DELETE " + path + ": " + r.status);
+  }
+
+  async function loadPosts(){
+    try{
+      const r = await fetch("imoveis.json?ts=" + Date.now(), {cache: "no-store"});
+      if(r.ok){
+        const d = await r.json();
+        if(Array.isArray(d)){
+          POSTS = d.filter(x => !_deletedIds.includes(x.id));
+          _pendingAdds = _pendingAdds.filter(x => {
+            if(d.some(y => y.id === x.id)) return false;
+            POSTS.push(x); return true;
+          });
+        }
+      }
+    }catch(e){}
+  }
+  async function savePosts(){
+    await ghPut("imoveis.json", encTxt(JSON.stringify(POSTS.filter(x => !_deletedIds.includes(x.id)), null, 2)), "Atualiza imóveis publicados");
+  }
+  async function uploadMedia(files){
+    const paths = [];
+    for(const f of files){
+      if(f.size > 90 * 1024 * 1024) throw new Error("Arquivo acima de 90MB (limite do GitHub): " + f.name);
+      const safe = f.name.replace(/[^\w.\-]/g, "_");
+      const path = "media/" + Date.now() + "-" + safe;
+      await ghPut(path, await fileB64(f), "Publica mídia: " + path);
+      paths.push({path: path, isVideo: f.type.startsWith("video")});
+    }
+    return paths;
+  }
+
+  function updateCatFields(){
+    const pro = ["alto", "investimento"].includes(document.getElementById("pCat").value);
+    document.getElementById("fieldPreco").hidden = !pro;
+    document.getElementById("fieldArea").hidden = !pro;
+  }
+  document.getElementById("pCat").addEventListener("change", updateCatFields);
+  updateCatFields();
+
+  function renderMediaPreview(){
+    const wrap = document.getElementById("mediaPreview");
+    wrap.innerHTML = "";
+    _mediaFiles.forEach((m, i) => {
+      const d = document.createElement("div");
+      d.className = "thumb" + (i === _coverIdx ? " is-cover" : "");
+      if(m.isVideo){ d.innerHTML = '<span class="tplay">▶</span>'; }
+      else { const im = document.createElement("img"); im.src = m.url; im.alt = m.file.name; d.appendChild(im); }
+      const bar = document.createElement("div"); bar.className = "tbar";
+      if(!m.isVideo){
+        const star = document.createElement("button"); star.type = "button";
+        star.className = "tbtn star" + (i === _coverIdx ? " on" : ""); star.textContent = "⭐"; star.title = "Definir como foto de capa";
+        star.addEventListener("click", () => { _coverIdx = i; renderMediaPreview(); });
+        bar.appendChild(star);
+      }
+      const del = document.createElement("button"); del.type = "button"; del.className = "tbtn"; del.textContent = "✖"; del.title = "Remover da lista";
+      del.addEventListener("click", () => {
+        _mediaFiles.splice(i, 1);
+        if(_coverIdx >= _mediaFiles.length) _coverIdx = (_mediaFiles.length ? _mediaFiles.findIndex(x => !x.isVideo) : -1);
+        renderMediaPreview();
+      });
+      bar.appendChild(del);
+      d.appendChild(bar);
+      wrap.appendChild(d);
+    });
+  }
+  document.getElementById("pMedia").addEventListener("change", function(){
+    [...this.files].forEach(f => _mediaFiles.push({file: f, isVideo: f.type.startsWith("video"), url: (f.type.startsWith("video") ? "" : URL.createObjectURL(f))}));
+    if(_coverIdx < 0) _coverIdx = _mediaFiles.findIndex(m => !m.isVideo);
+    this.value = "";
+    renderMediaPreview();
+  });
+
+  function addPropCard(p, isPost){
+    const grid = document.querySelector('[data-grid="' + p.cat + '"]');
+    if(!grid) return;
+    const specs = [];
+    if(p.bed)  specs.push("🛏 " + p.bed  + (p.bed==1 ? " quarto" : " quartos"));
+    if(p.bath) specs.push("🛁 " + p.bath + (p.bath==1 ? " banheiro" : " banheiros"));
+    if(p.area) specs.push("📐 " + p.area + " m²");
+    const specsHtml = specs.map(s => "<span>" + s + "</span>").join("");
+    const photos = p.photos || (p.photo ? [p.photo] : []);
+    const videos = p.videos || [];
+    const cover = p.cover || photos[0] || null;
+    const vidLink = p.video || null;
+    let priceHtml = '<div class="prop-price">Consulte</div>';
+    if(p.preco && p.renda){
+      priceHtml = '<div class="prop-price"><small>Preço</small>' + p.preco + '<small style="margin-top:.2rem">Renda: ' + p.renda + '</small></div>';
+    } else if(p.preco){
+      priceHtml = '<div class="prop-price"><small>Preço</small>' + p.preco + '</div>';
+    } else if(p.renda){
+      priceHtml = '<div class="prop-price"><small>Renda</small>' + p.renda + '</div>';
+    }
+    const card = document.createElement("article");
+    card.className = "prop-card";
+    card.dataset.pid = p.id || "";
+    card.innerHTML =
+      '<div class="prop-media">' +
+        (cover ? '<img src="' + cover + '" alt="' + (p.title||"Imóvel") + '" style="cursor:' + (photos.length > 1 ? 'pointer' : 'default') + '">' : '<div class="ph ' + (CAT_STYLE[p.cat]||"") + '"></div>') +
+        (photos.length > 1 ? '<span class="photo-count">📷 ' + photos.length + ' fotos</span>' : '') +
+        '<span class="prop-tag blue">' + (CAT_LABEL[p.cat]||"") + '</span>' +
+        ((vidLink || videos.length) ? '<button class="video-badge" type="button">▶ Ver vídeo</button>' : '') +
+        (isAdmin && isPost ? '<button class="prop-del" type="button" data-pid="' + (p.id||"") + '">🗑 Apagar</button>' : '') +
+      '</div>' +
+      '<div class="prop-body">' +
+        (p.loc ? '<span class="prop-loc">📍 ' + p.loc + '</span>' : '') +
+        '<h3>' + (p.title || "Imóvel") + '</h3>' +
+        (specsHtml ? '<div class="prop-specs">' + specsHtml + '</div>' : '') +
+        (p.desc ? '<p class="prop-desc">' + p.desc + '</p>' : '') +
+        '<div class="prop-foot">' + priceHtml +
+          '<a href="' + waLink("Olá, Rafael! Tenho interesse no imóvel: " + (p.title||"")) + '" class="link-arrow">Tenho interesse →</a>' +
         '</div>' +
-        '<div class="prop-body">' +
-          (p.loc ? '<span class="prop-loc">📍 ' + p.loc + '</span>' : '') +
-          '<h3>' + (p.title || "Imóvel") + '</h3>' +
-          (specsHtml ? '<div class="prop-specs">' + specsHtml + '</div>' : '') +
-          (p.desc ? '<p class="prop-desc">' + p.desc + '</p>' : '') +
-          '<div class="prop-foot">' +
-            '<div class="prop-price">' + (p.price || "Consulte") + '</div>' +
-            '<a href="' + waLink("Olá, Rafael! Tenho interesse no imóvel: " + (p.title||"")) + '" class="link-arrow">Tenho interesse →</a>' +
-          '</div>' +
-        '</div>';
-      grid.appendChild(card);
+      '</div>';
+    grid.appendChild(card);
+    if(photos.length > 1){
+      const img = card.querySelector(".prop-media img");
+      let idx = 0;
+      img.addEventListener("click", () => { idx = (idx + 1) % photos.length; img.src = photos[idx]; });
+    }
+    const vb = card.querySelector(".video-badge");
+    if(vb && videos.length){
+      vb.addEventListener("click", () => {
+        const media = card.querySelector(".prop-media");
+        const existing = media.querySelector("video");
+        if(existing){ existing.remove(); return; }
+        const v = document.createElement("video");
+        v.src = videos[0]; v.controls = true; v.autoplay = true; v.playsInline = true;
+        media.appendChild(v);
+      });
+    } else if(vb && vidLink){
+      vb.addEventListener("click", () => window.open(vidLink, "_blank", "noopener"));
+    }
   }
 
   function renderProps(){
     document.querySelectorAll("[data-grid]").forEach(g => g.innerHTML = "");
-    PROPS_CMS.forEach(addPropCard);
+    POSTS.forEach(p => addPropCard(p, true));
+    PROPS_CMS.forEach(p => addPropCard(p, false));
     document.querySelectorAll(".tab-panel").forEach(panel => {
       const grid = panel.querySelector("[data-grid]");
       const empty = panel.querySelector(".empty-state");
       if(grid && empty) empty.style.display = grid.children.length ? "none" : "flex";
     });
+    document.querySelectorAll(".prop-del").forEach(b => b.addEventListener("click", function(){ deletePost(this.dataset.pid); }));
   }
 
-  document.getElementById("propForm").addEventListener("submit", function(e){
+  async function deletePost(id){
+    if(!id) return;
+    if(!confirm("🗑 Apagar esta publicação e suas fotos/vídeos do site?")) return;
+    try{
+      const p = POSTS.find(x => (x.id||"") === id);
+      if(p){
+        const medias = new Set([].concat(p.photos || [], p.videos || [], p.cover ? [p.cover] : []));
+        for(const m of medias){ if(m && m.indexOf("media/") === 0) await ghDelete(m, "Remove mídia: " + m); }
+      }
+      _deletedIds.push(id);
+      POSTS = POSTS.filter(x => (x.id||"") !== id);
+      await savePosts();
+      await loadPosts();
+      renderProps();
+      alert("✅ Publicação apagada. Sai do ar em até ~1 minuto.");
+    }catch(err){ alert("❌ Erro ao apagar: " + err.message); }
+  }
+
+  document.getElementById("propForm").addEventListener("submit", async function(e){
     e.preventDefault();
+    const btn = document.getElementById("pSubmitBtn");
     const val = id => document.getElementById(id).value.trim();
+    const cat = val("pCat");
+    const pro = ["alto", "investimento"].includes(cat);
     const item = {
-      title: val("pTitle"), cat: val("pCat"), loc: val("pLoc"), price: val("pPrice"),
-      video: val("pVideo"), bed: val("pBed") || null, bath: val("pBath") || null, area: val("pArea") || null,
-      desc: val("pDesc"), photo: val("pPhotoUrl") || null
+      id: "p" + Date.now(),
+      title: val("pTitle"), cat: cat, loc: val("pLoc"),
+      renda: val("pRenda") || null,
+      preco: pro ? (val("pPreco") || null) : null,
+      video: val("pVideo") || null,
+      bed: val("pBed") || null, bath: val("pBath") || null,
+      area: pro ? (val("pArea") || null) : null,
+      desc: val("pDesc"), photos: [], videos: [], cover: null,
+      photo: val("pPhotoUrl") || null
     };
-    PROPS_CMS.push(item);            // pré-visualização imediata nesta página
-    renderProps();
-    const code = "PROPS_CMS.push(" + JSON.stringify(item) + ");";
-    document.getElementById("publishCode").value = code;
-    document.getElementById("publishOut").hidden = false;
-    document.getElementById("publishOut").scrollIntoView({behavior:"smooth", block:"center"});
-    this.reset();
-  });
-
-  document.getElementById("copyCode").addEventListener("click", function(){
-    const t = document.getElementById("publishCode");
-    t.select();
-    const done = () => { this.textContent = "✅ Copiado!"; setTimeout(() => this.textContent = "📋 Copiar código", 2500); };
-    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t.value).then(done); } else { document.execCommand("copy"); done(); }
-  });
-
-  document.getElementById("toggleManage").addEventListener("click", () => {
-    const c = document.getElementById("manageCard");
-    c.hidden = !c.hidden;
+    if(!item.renda && !item.preco && !item.photo && !_mediaFiles.length && !item.video){
+      alert("Preencha pelo menos a Renda/Preço ou adicione uma foto/vídeo."); return;
+    }
+    btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = "⏳ Publicando...";
+    try{
+      if(ghToken()){
+        if(_mediaFiles.length){
+          const ups = await uploadMedia(_mediaFiles.map(m => m.file));
+          item.photos = ups.filter(u => !u.isVideo).map(u => u.path);
+          item.videos = ups.filter(u => u.isVideo).map(u => u.path);
+          const coverMedia = _mediaFiles[_coverIdx];
+          if(coverMedia && !coverMedia.isVideo){
+            const coverFile = ups.find(u => u.path.endsWith(coverMedia.file.name.replace(/[^\w.\-]/g, "_")));
+            item.cover = coverFile ? coverFile.path : (item.photos[0] || null);
+          } else {
+            item.cover = item.photos[0] || null;
+          }
+        }
+        POSTS.push(item);
+        _pendingAdds.push(item);
+        await savePosts();
+        renderProps();
+        resetMediaForm();
+        const tabBtn = document.querySelector('.tab[data-tab="' + item.cat + '"]');
+        if(tabBtn) tabBtn.click();
+      } else {
+        PROPS_CMS.push(item);
+        renderProps();
+        const code = "PROPS_CMS.push(" + JSON.stringify(item) + ");";
+        document.getElementById("publishCode").value = code;
+        document.getElementById("publishOut").hidden = false;
+        document.getElementById("publishOut").scrollIntoView({behavior:"smooth", block:"center"});
+        alert("🔐 Sem token configurado: modo manual. Copie o código e cole no index.html no GitHub para publicar.");
+      }
+      this.reset(); resetMediaForm();
+    }catch(err){
+      alert("❌ Erro ao publicar: " + err.message);
+    }finally{
+      btn.disabled = false; btn.textContent = oldTxt;
+    }
   });
 
   // ===== Área restrita do proprietário (visitantes não veem nem alteram) =====
@@ -1149,8 +1362,12 @@
       isAdmin = true;
       try{ sessionStorage.setItem("rafael_admin","1"); }catch(e){}
       applyAdmin();
+      if(!ghToken()){
+        const tk = prompt("🔑 Opcional — GitHub Token para publicar/apagar AUTOMATICAMENTE (fotos e vídeos salvos no repositório, atualização para todos).\nCrie em: github.com/settings/tokens (escopo: public_repo).\nDeixe vazio para usar o modo manual (copiar e colar código):");
+        if(tk && tk.trim()){ try{ localStorage.setItem("rafael_gh_token", tk.trim()); }catch(e){} }
+      }
       document.getElementById("imoveis").scrollIntoView({behavior:"smooth"});
-      alert("Painel liberado! Gere o imóvel, copie o código e cole no index.html para publicar. 🏡");
+      alert("Painel liberado! " + (ghToken() ? "Token ativo: publicação automática. 🚀" : "Sem token: modo manual (copiar/colar). 🔐"));
     } else {
       alert("Senha incorreta.");
     }
@@ -1159,6 +1376,7 @@
   window.addEventListener("hashchange", checkAdminHash);
   checkAdminHash();
   applyAdmin();
+
 
   // ===== Reveal on scroll =====
   const io = new IntersectionObserver(entries => {
